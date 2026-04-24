@@ -398,9 +398,18 @@ CONVERT(GLubyte, GLubyte, 3, 4, {
 })
 
 INTERNAL void convert_texture2d(GLenum type, GLenum format, GLuint width, GLuint height, GLvoid const* data, GLenum outtype, GLenum outformat, GLvoid** outdata) {
-    if(type == GL_UNSIGNED_INT_8_8_8_8_REV && (format == GL_RGBA || format == GL_BGRA || format == GL_ABGR_EXT)) {
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define U32_4C_COMPATIBLE_TYPE GL_UNSIGNED_INT_8_8_8_8_REV
+#else
+#define U32_4C_COMPATIBLE_TYPE GL_UNSIGNED_INT_8_8_8_8
+#endif
+    if(type == U32_4C_COMPATIBLE_TYPE && (format == GL_RGBA || format == GL_BGRA || format == GL_ABGR_EXT)) {
         type = GL_UNSIGNED_BYTE;
     }
+    // TODO: adjust swizzle for GL_UNSIGNED_INT_8_8_8_8
+#undef U32_4C_COMPATIBLE_TYPE
+
     if(!is_type_basic(type) || !is_type_basic(outtype)) {
         LOGI("conversion between non-basic types %x and %x", type, outtype);
         return;

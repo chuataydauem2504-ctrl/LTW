@@ -124,6 +124,7 @@ void glTexSubImage2D(GLenum target,
         return;
     }
 
+    // TODO: store this in LTW
     GLint internalformat;
     es3_functions.glGetTexLevelParameteriv(target, level, GL_TEXTURE_INTERNAL_FORMAT, &internalformat);
 
