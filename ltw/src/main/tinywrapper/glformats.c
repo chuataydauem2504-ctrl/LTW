@@ -15,6 +15,11 @@
 
 #include <android/log.h>
 
+#if defined(__aarch64__) || defined(__arm__)
+#include <arm_neon.h>
+#define ARM_NEON
+#endif
+
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "LTW", __VA_ARGS__)
 
 static GLint pick_depth_internalformat(GLenum* type, bool* convert) {
@@ -348,12 +353,42 @@ static void convert_##INTYPE##_##INCHANNELS##_to_##OUTTYPE##_##OUTCHANNELS(GLuin
     } \
 } \
 
+#ifdef ARM_NEON
+void
+convert_GLubyte_4_to_GLubyte_4(GLuint unpack_row_length, GLuint height, const GLubyte *in,
+                               GLubyte *out, GLuint outw, const unsigned char swizzle[4]) {
+    GLint s = sizeof(GLubyte);
+    GLint a = current_context->unpack.alignment;
+    GLuint k;
+    if (s >= a)k = unpack_row_length * 4;
+    else
+        k = (GLuint) (((double) a / s) * ceil((s * 4.0 * unpack_row_length) / a));
+
+    uint64_t swizzle_raw = *(uint32_t*)swizzle;
+    uint8x8_t index = vadd_u8(vcreate_u8((uint64_t) swizzle_raw | swizzle_raw << 32) , vcreate_u8(0x0404040400000000L));
+
+    for (GLuint y = 0; y < height; y++) {
+        const GLubyte *inrow = &in[k * y];
+        GLubyte *outrow = &out[outw * y * 4];
+
+        for (GLuint x = 0; x < unpack_row_length; x += 2) {
+            GLuint outbase = x * 4;
+            GLuint inbase = x * 4;
+            {
+                uint8x8_t rowbase = *(uint8x8_t*) &inrow[inbase];
+                *(uint8x8_t*)&outrow[outbase] = vtbl1_u8(rowbase, index);
+            }
+        }
+    }
+}
+#else
 CONVERT(GLubyte, GLubyte, 4, 4, {
     outrow[outbase + 0] = inrow[inbase + swizzle[0]];
     outrow[outbase + 1] = inrow[inbase + swizzle[1]];
     outrow[outbase + 2] = inrow[inbase + swizzle[2]];
     outrow[outbase + 3] = inrow[inbase + swizzle[3]];
 })
+#endif
 
 CONVERT(GLubyte, GLubyte, 3, 4, {
     outrow[outbase + 0] = inrow[inbase + 0];
@@ -363,6 +398,9 @@ CONVERT(GLubyte, GLubyte, 3, 4, {
 })
 
 INTERNAL void convert_texture2d(GLenum type, GLenum format, GLuint width, GLuint height, GLvoid const* data, GLenum outtype, GLenum outformat, GLvoid** outdata) {
+    if(type == GL_UNSIGNED_INT_8_8_8_8_REV && (format == GL_RGBA || format == GL_BGRA || format == GL_ABGR_EXT)) {
+        type = GL_UNSIGNED_BYTE;
+    }
     if(!is_type_basic(type) || !is_type_basic(outtype)) {
         LOGI("conversion between non-basic types %x and %x", type, outtype);
         return;

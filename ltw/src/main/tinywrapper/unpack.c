@@ -21,7 +21,7 @@ static unpack_state_t default_state = {
 INTERNAL void apply_unpack_state_to_hw(unpack_state_t *state) {
 #define SET_HW_PARAM(NAME, ENUM) \
     if(state->NAME != current_context->hwunpack.NAME) { \
-        es3_functions.glPixelStorei(GL_UNPACK_ALIGNMENT, state->NAME); \
+        es3_functions.glPixelStorei(ENUM, state->NAME); \
         current_context->hwunpack.NAME = state->NAME;                  \
     }
     SET_HW_PARAM(row_length, GL_UNPACK_ROW_LENGTH)

@@ -85,6 +85,7 @@ typedef struct {
     unordered_map* program_map;
     unordered_map* framebuffer_map;
     unordered_map* bound_basebuffers[MAX_BOUND_BASEBUFFERS];
+    unordered_map* texdesc_map;
     unpack_state_t unpack, hwunpack;
     int proxy_width, proxy_height, proxy_intformat, maxTextureSize;
     GLint max_drawbuffers;
