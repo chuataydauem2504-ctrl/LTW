@@ -255,7 +255,7 @@ void glTexParameteri( 	GLenum target,
     if(!current_context) return;
     if(!filter_params_integer(target, pname, param)) return;
     if(!filter_params_float(target, pname, (GLfloat)param)) return;
-    remove_mipmaps(pname, &param);
+    //remove_mipmaps(pname, &param);
     make_depthtex_nearest(target, pname, &param);
     es3_functions.glTexParameteri(target, pname, param);
 }
@@ -274,7 +274,7 @@ void glTexParameteriv( 	GLenum target,
     if(!current_context) return;
     if(!filter_params_integer(target, pname, *params)) return;
     if(!filter_params_float(target, pname, (GLfloat)*params)) return;
-    remove_mipmaps(pname, params);
+    //remove_mipmaps(pname, params);
     make_depthtex_nearest(target, pname, params);
     es3_functions.glTexParameteriv(target, pname, params);
 }
