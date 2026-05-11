@@ -75,6 +75,11 @@ static void free_context(context_t* tw_context) {
 
 void init_extra_extensions(context_t* context, int* length) {
     const char* es_extensions = (const char*)es3_functions.glGetString(GL_EXTENSIONS);
+    // Patch: Kiểm tra nullptr cho es_extensions — tránh crash khi driver trả về NULL
+    if (es_extensions == NULL || es_extensions[0] == '\0') {
+        printf("LTW: Cảnh báo: Không thể lấy GL_EXTENSIONS, dùng chuỗi rỗng.\n");
+        es_extensions = "";
+    }
     *length = (int)strlen(es_extensions);
     context->extensions_string = malloc(*length + 1);
     memcpy(context->extensions_string, es_extensions, *length+1);
@@ -132,6 +137,16 @@ static void find_esversion(context_t* context) {
     const char* version = (const char*) es3_functions.glGetString(GL_VERSION);
     const char* shader_version = (const char*) es3_functions.glGetString(GL_SHADING_LANGUAGE_VERSION);
 
+    // Patch: Kiểm tra nullptr trước khi sử dụng — tránh crash khi driver trả về NULL
+    if (version == NULL || version[0] == '\0') {
+        printf("LTW: Cảnh báo: Không thể lấy GL_VERSION từ driver, sử dụng giá trị mặc định.\n");
+        version = "OpenGL ES 3.0";  // Giá trị mặc định an toàn
+    }
+    if (shader_version == NULL || shader_version[0] == '\0') {
+        printf("LTW: Cảnh báo: Không thể lấy GL_SHADING_LANGUAGE_VERSION từ driver, sử dụng giá trị mặc định.\n");
+        shader_version = "OpenGL ES GLSL ES 3.00";  // Giá trị mặc định an toàn
+    }
+
     int esmajor = 0, esminor = 0, shadermajor = 3, shaderminor = 0;
     sscanf(version, " OpenGL ES %i.%i", &esmajor, &esminor);
     sscanf(shader_version, " OpenGL ES GLSL ES %i.%i", &shadermajor, &shaderminor);
@@ -150,6 +165,11 @@ static void find_esversion(context_t* context) {
     }
 
     const char* extensions = (const char*) es3_functions.glGetString(GL_EXTENSIONS);
+    // Patch: Kiểm tra nullptr cho extensions — tránh crash khi strstr nhận NULL
+    if (extensions == NULL) {
+        printf("LTW: Cảnh báo: Không thể lấy GL_EXTENSIONS trong find_esversion, bỏ qua phát hiện extension.\n");
+        extensions = "";
+    }
     if(strstr(extensions, "GL_EXT_buffer_storage")) context->buffer_storage = true;
     if(strstr(extensions, "GL_EXT_texture_buffer")) context->buffer_texture_ext = true;
     if(strstr(extensions, "GL_EXT_multi_draw_indirect")) context->multidraw_indirect = true;
