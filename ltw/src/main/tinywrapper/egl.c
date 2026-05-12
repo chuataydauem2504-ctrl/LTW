@@ -287,7 +287,7 @@ const char* eglQueryString(EGLDisplay dpy, EGLint name) {
 
     const char* version = (const char*)eglQueryString_original(dpy, name);
     if (version == NULL) {
-        return "4.6 (Core Profile) Mesa 24.1.0";
+        return "OpenGL ES 3.1 Mesa 24.1.0";
     }
 
     return version;
